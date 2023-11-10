@@ -1,0 +1,37 @@
+from flask import Flask, jsonify, request
+import RPi.GPIO as GPIO
+import threading
+import time
+
+app = Flask(__name__)
+parking_space_status = False  # Variable to store parking space status (True for occupied, False for available)
+
+# GPIO pin configuration for the sensor (change GPIO_PIN based on your setup)
+GPIO_PIN = 18
+
+# Setup GPIO pin mode
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(GPIO_PIN, GPIO.IN)
+
+def update_parking_space_status():
+    global parking_space_status
+    while True:
+        # Read sensor data (change GPIO_PIN based on your setup)
+        sensor_data = GPIO.input(GPIO_PIN)
+        
+        # Update parking_space_status based on sensor data
+        parking_space_status = not sensor_data
+        
+        # Pause for a while before the next reading
+        time.sleep(1)
+
+# Start the thread for updating parking space status
+sensor_thread = threading.Thread(target=update_parking_space_status)
+sensor_thread.start()
+
+@app.route('/api/parking', methods=['GET'])
+def get_parking_status():
+    return jsonify({'available': parking_space_status})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')

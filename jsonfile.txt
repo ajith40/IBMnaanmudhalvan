@@ -1,0 +1,93 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() => runApp(ParkingAvailabilityApp());
+
+class ParkingAvailabilityApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Parking Availability',
+      home: ParkingAvailabilityScreen(),
+    );
+  }
+}
+
+class ParkingAvailabilityScreen extends StatefulWidget {
+  @override
+  _ParkingAvailabilityScreenState createState() =>
+      _ParkingAvailabilityScreenState();
+}
+
+class _ParkingAvailabilityScreenState extends State<ParkingAvailabilityScreen> {
+  bool available = false;
+
+  Future<void> fetchParkingAvailability() async {
+    final response =
+        await http.get(Uri.parse('http://YOUR_RASPBERRY_PI_IP:5000/api/parking'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        available = data['available'];
+      });
+    } else {
+      throw Exception('Failed to load parking availability');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchParkingAvailability();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Parking Availability'),
+      ),
+      body: Center(
+        child: Text(
+          'Parking Status: ${available ? 'Available' : 'Full'}',
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
+    );
+  }
+}
+
+import React, { useState, useEffect } from 'react';
+import './App.css';
+
+function App() {
+  const [available, setAvailable] = useState(false);
+
+  useEffect(() => {
+    const fetchParkingAvailability = async () => {
+      try {
+        const response = await fetch('http://YOUR_RASPBERRY_PI_IP:5000/api/parking');
+        const data = await response.json();
+        setAvailable(data.available);
+      } catch (error) {
+        console.error('Error fetching parking availability:', error);
+      }
+    };
+
+    const interval = setInterval(fetchParkingAvailability, 1000); // Fetch data every second
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, []);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>Parking Availability</h1>
+        <p>Parking Status: {available ? 'Available' : 'Full'}</p>
+      </header>
+    </div>
+  );
+}
+
+export default App;
